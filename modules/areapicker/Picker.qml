@@ -80,10 +80,9 @@ MouseArea {
             if (isSearch) {
                 Quickshell.execDetached(["touch", "/tmp/caelestia-search.done"]);
             } else if (root.loader.clipboardOnly) {
-                Quickshell.execDetached(["sh", "-c", "wl-copy --type image/png < " + path]);
-                Quickshell.execDetached(["notify-send", "-a", "caelestia-cli", "-i", path, "Screenshot taken", "Screenshot copied to clipboard"]);
+                Quickshell.execDetached(["caelestia", "screenshot", "--copy", "--file", path]);
             } else {
-                Quickshell.execDetached(["swappy", "-f", path]);
+                Quickshell.execDetached(["caelestia", "screenshot", "--file", path]);
             }
             Audio.playCameraClick();
             closeAnim.start();

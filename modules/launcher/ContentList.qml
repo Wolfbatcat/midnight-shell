@@ -20,7 +20,7 @@ Item {
     required property int padding
     required property int rounding
 
-    readonly property bool showWallpapers: search.text.startsWith(`${GlobalConfig.launcher.actionPrefix}wallpaper `)
+    readonly property bool showWallpapers: search.text.startsWith(`${GlobalConfig.launcher.actionPrefix}wallpaper `) || search.text === `${GlobalConfig.launcher.actionPrefix}wallpaper`
     onShowWallpapersChanged: {
         if (showWallpapers) {
             for (let category of Wallpapers.categories) {
@@ -32,9 +32,9 @@ Item {
             }
         }
     }
-    readonly property bool showWindowSwitcher: search.text.startsWith(`${GlobalConfig.launcher.actionPrefix}windows `)
-    readonly property bool showKeybinds: search.text.startsWith(`${GlobalConfig.launcher.actionPrefix}keybinds `)
-    readonly property bool showAnimations: search.text.startsWith(`${GlobalConfig.launcher.actionPrefix}animations `)
+    readonly property bool showWindowSwitcher: search.text.startsWith(`${GlobalConfig.launcher.actionPrefix}windows `) || search.text === `${GlobalConfig.launcher.actionPrefix}windows`
+    readonly property bool showKeybinds: search.text.startsWith(`${GlobalConfig.launcher.actionPrefix}keybinds `) || search.text === `${GlobalConfig.launcher.actionPrefix}keybinds`
+    readonly property bool showAnimations: search.text.startsWith(`${GlobalConfig.launcher.actionPrefix}animations `) || search.text === `${GlobalConfig.launcher.actionPrefix}animations`
     readonly property var currentList: showWallpapers ? wallpaperList.item : (showWindowSwitcher ? windowSwitcherList.item : (showAnimations ? animationsList.item : (showKeybinds ? keybindsList.item : appList.item)))
 
     property string currentWallpaperTab: "Main"
@@ -176,6 +176,7 @@ Item {
         id: appList
 
         active: false
+        visible: active
 
         anchors.fill: parent
 
@@ -192,6 +193,7 @@ Item {
 
         asynchronous: true
         active: false
+        visible: active
 
         anchors.top: parent.top
         anchors.horizontalCenter: parent.horizontalCenter
@@ -334,6 +336,7 @@ Item {
 
         asynchronous: true
         active: false
+        visible: active
 
         anchors.top: parent.top
         anchors.bottom: parent.bottom
@@ -351,6 +354,7 @@ Item {
         id: keybindsList
 
         active: false
+        visible: active
 
         anchors.fill: parent
 
@@ -364,6 +368,7 @@ Item {
         id: animationsList
 
         active: false
+        visible: active
 
         anchors.fill: parent
 
