@@ -1,27 +1,44 @@
 cmake_minimum_required(VERSION 3.19)
 
+set(REMOTE_REPO_URL "https://github.com/caelestia-dots/shell.git")
+
 if(NOT DEFINED VERSION)
-    execute_process(COMMAND git describe --tags --abbrev=0
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-        OUTPUT_VARIABLE VERSION
+    # Fetch the latest annotated or lightweight tag from the remote repo
+    execute_process(
+        COMMAND git ls-remote --tags --sort=-v:refname "${REMOTE_REPO_URL}"
+        OUTPUT_VARIABLE REMOTE_TAGS_RAW
+        RESULT_VARIABLE GIT_TAG_RESULT
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
 
+    if(NOT GIT_TAG_RESULT EQUAL 0 OR "${REMOTE_TAGS_RAW}" STREQUAL "")
+        message(FATAL_ERROR "Failed to query tags from ${REMOTE_REPO_URL}")
+    endif()
+
+    # Extract the first ref tag name (strips commit hash and peels ^{})
+    string(REGEX MATCH "refs/tags/([^\n\^\t ]+)" _MATCH "${REMOTE_TAGS_RAW}")
+    set(VERSION "${CMAKE_MATCH_1}")
+
     if("${VERSION}" STREQUAL "")
-        message(FATAL_ERROR "VERSION is not set and failed to get from git")
+        message(FATAL_ERROR "VERSION is not set and failed to parse from remote tags")
     endif()
 endif()
 
 if(NOT DEFINED GIT_REVISION)
-    execute_process(COMMAND git rev-parse HEAD
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-        OUTPUT_VARIABLE GIT_REVISION
+    # Fetch HEAD commit hash from the remote repo
+    execute_process(
+        COMMAND git ls-remote "${REMOTE_REPO_URL}" HEAD
+        OUTPUT_VARIABLE REMOTE_HEAD_RAW
+        RESULT_VARIABLE GIT_REV_RESULT
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
 
-    if("${GIT_REVISION}" STREQUAL "")
-        message(FATAL_ERROR "GIT_REVISION is not set and failed to get from git")
+    if(NOT GIT_REV_RESULT EQUAL 0 OR "${REMOTE_HEAD_RAW}" STREQUAL "")
+        message(FATAL_ERROR "GIT_REVISION is not set and failed to get from remote repo")
     endif()
+
+    # Extract the 40-character commit SHA
+    string(REGEX MATCH "^([0-9a-fA-F]+)" GIT_REVISION "${REMOTE_HEAD_RAW}")
 endif()
 
 string(REGEX REPLACE "^v" "" VERSION "${VERSION}")
