@@ -16,7 +16,16 @@ Searcher {
     }
 
     function previewVariant(variant: string): void {
-        const cmd = `import json\nfrom caelestia.utils.scheme import get_scheme\nscheme = get_scheme()\nscheme.variant = "${variant}"\nscheme.update_colours()\nprint(json.dumps({"name": scheme.name, "flavour": scheme.flavour, "mode": scheme.mode, "variant": scheme.variant, "colours": scheme.colours}))`;
+        // Build a throwaway Scheme instance instead of mutating the real
+        // get_scheme() singleton - its variant setter/update_colours() both
+        // call self.save(), which writes scheme.json for real. That turned
+        // "preview" into a live, unlocked, racy write to persisted state:
+        // just opening this menu (currentItem defaults to index 0) silently
+        // overwrote the active variant, and rapid hover navigation could
+        // stomp an explicit selection made moments later. Scheme(dict)'s
+        // constructor sets _variant directly (bypassing the setter), and
+        // _update_colours() (private, no save()) recomputes colours read-only.
+        const cmd = `import json\nfrom caelestia.utils.scheme import get_scheme, Scheme\ncurrent = get_scheme()\npreview = Scheme({"name": current.name, "flavour": current.flavour, "mode": current.mode, "variant": "${variant}", "colours": current.colours})\npreview._update_colours()\nprint(json.dumps({"name": preview.name, "flavour": preview.flavour, "mode": preview.mode, "variant": preview.variant, "colours": preview.colours}))`;
         getPreviewColoursProc.command = ["python3", "-c", cmd];
         getPreviewColoursProc.running = true;
     }
@@ -39,6 +48,12 @@ Searcher {
             description: qsTr("A high chroma palette. The primary palette's chroma is at maximum.")
         },
         Variant {
+            variant: "vibrant-bbc"
+            icon: "sentiment_very_dissatisfied"
+            name: qsTr("True Vibrant")
+            description: qsTr("A high chroma palette. Like Vibrant, but secondary and tertiary hues are pulled back toward the seed colour instead of swinging wide across the wheel.")
+        },
+        Variant {
             variant: "tonalspot"
             icon: "android"
             name: qsTr("Tonal Spot")
@@ -49,6 +64,12 @@ Searcher {
             icon: "compare_arrows"
             name: qsTr("Expressive")
             description: qsTr("A medium chroma palette. The primary palette's hue is different from the seed colour, for variety.")
+        },
+        Variant {
+            variant: "expressive-bbc"
+            icon: "compare_arrows"
+            name: qsTr("True Expressive")
+            description: qsTr("A medium chroma palette. Like Expressive, but secondary and tertiary hues are pulled back toward the seed colour instead of swinging wide across the wheel.")
         },
         Variant {
             variant: "fidelity"
