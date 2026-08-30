@@ -30,7 +30,7 @@ CustomMouseArea {
     property Item hoveredDayItem: null
     property Item lastHoveredDayItem: null
     property var lastHoveredModel: lastHoveredDayItem ? lastHoveredDayItem.model : null
-    property var lastHoveredHoliday: lastHoveredDayItem ? lastHoveredDayItem.holiday : null
+    property var lastHoveredEvents: lastHoveredDayItem ? lastHoveredDayItem.dayEvents : []
 
     function onWheel(event: WheelEvent): void {
         if (event.angleDelta.y > 0)
@@ -204,7 +204,7 @@ CustomMouseArea {
                     id: dayItem
 
                     required property var model
-                    property var holiday: holidayIndicator.holiday
+                    property var dayEvents: holidayIndicator.dayEvents
 
                     implicitWidth: implicitHeight
                     implicitHeight: text.implicitHeight + Tokens.padding.small
@@ -232,15 +232,13 @@ CustomMouseArea {
 
                     Rectangle {
                         id: holidayIndicator
-                        readonly property var holiday: {
-                            if (!GoogleCalendar.events) return null;
+                        // All events for this day, not just the first match -
+                        // a real calendar stacks multiple events on one day far
+                        // more often than the old fixed holiday list ever did.
+                        readonly property var dayEvents: {
+                            if (!GoogleCalendar.events) return [];
                             const dateStr = Qt.formatDate(dayItem.model.date, "yyyy-MM-dd");
-                            for (let i = 0; i < GoogleCalendar.events.length; i++) {
-                                if (GoogleCalendar.events[i].day === dateStr) {
-                                    return GoogleCalendar.events[i];
-                                }
-                            }
-                            return null;
+                            return GoogleCalendar.events.filter(e => e.day === dateStr);
                         }
 
                         anchors.top: text.bottom
@@ -250,12 +248,12 @@ CustomMouseArea {
                         height: 4
                         radius: 2
                         color: Colours.palette.m3primary
-                        visible: !!holiday
+                        visible: dayEvents.length > 0
                     }
-                    
+
                     HoverHandler {
                         id: hover
-                        enabled: !!holidayIndicator.holiday
+                        enabled: holidayIndicator.dayEvents.length > 0
                         onHoveredChanged: {
                             if (hovered) {
                                 root.lastHoveredDayItem = dayItem;
@@ -308,7 +306,7 @@ CustomMouseArea {
     Item {
         id: customTooltip
         
-        readonly property bool isActive: !!root.hoveredDayItem && !!root.hoveredDayItem.holiday
+        readonly property bool isActive: !!root.hoveredDayItem && root.hoveredDayItem.dayEvents.length > 0
         
         readonly property real pillSize: root.lastHoveredDayItem ? Math.max(root.lastHoveredDayItem.implicitWidth, root.lastHoveredDayItem.implicitHeight) + Tokens.padding.extraSmall * 2 : 30
         readonly property real br: pillSize / 2
@@ -323,7 +321,7 @@ CustomMouseArea {
         x: targetCenterX - width / 2
         y: targetCenterY - (height - br)
         
-        width: Math.max(pillSize + 2 * (Tokens.rounding.medium + Tokens.rounding.large), holidayText.implicitWidth + Tokens.padding.large * 2)
+        width: Math.max(pillSize + 2 * (Tokens.rounding.medium + Tokens.rounding.large), holidayText.width + Tokens.padding.large * 2)
         height: (holidayText.implicitHeight + Tokens.padding.medium * 2) + Tokens.rounding.medium + br
         
         scale: isActive ? 1 : 0.8
@@ -387,7 +385,15 @@ CustomMouseArea {
         
         StyledText {
             id: holidayText
-            text: root.lastHoveredHoliday ? root.lastHoveredHoliday.subject : ""
+            // Longest natural line this bubble will allow before wrapping -
+            // long real event titles (e.g. a full committee-meeting name)
+            // would otherwise stretch the tooltip arbitrarily wide.
+            readonly property real maxWidth: 220
+
+            text: root.lastHoveredEvents.map(e => e.subject).join("\n")
+            width: Math.min(implicitWidth, maxWidth)
+            wrapMode: Text.WordWrap
+            horizontalAlignment: Text.AlignHCenter
             anchors.top: parent.top
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.topMargin: Tokens.padding.medium
@@ -435,7 +441,7 @@ CustomMouseArea {
                 height: 4
                 radius: 2
                 color: (root.lastHoveredModel && root.lastHoveredModel.today) ? Colours.palette.m3onPrimary : Colours.palette.m3primary
-                visible: root.lastHoveredHoliday !== null
+                visible: root.lastHoveredEvents.length > 0
             }
         }
     }
