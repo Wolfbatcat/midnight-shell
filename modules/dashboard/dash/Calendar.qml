@@ -233,11 +233,11 @@ CustomMouseArea {
                     Rectangle {
                         id: holidayIndicator
                         readonly property var holiday: {
-                            if (!PastafarianCalendar.events) return null;
+                            if (!GoogleCalendar.events) return null;
                             const dateStr = Qt.formatDate(dayItem.model.date, "yyyy-MM-dd");
-                            for (let i = 0; i < PastafarianCalendar.events.length; i++) {
-                                if (PastafarianCalendar.events[i].day === dateStr) {
-                                    return PastafarianCalendar.events[i];
+                            for (let i = 0; i < GoogleCalendar.events.length; i++) {
+                                if (GoogleCalendar.events[i].day === dateStr) {
+                                    return GoogleCalendar.events[i];
                                 }
                             }
                             return null;

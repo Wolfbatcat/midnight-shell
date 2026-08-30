@@ -61,7 +61,7 @@ ShellRoot {
     Component.onCompleted: {
         Qt.callLater(() => {
             Weather.reload();
-            PastafarianCalendar.reload();
+            GoogleCalendar.reload();
         });
     }
     BatteryMonitor {}
